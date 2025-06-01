@@ -165,6 +165,20 @@
             <i></i>
           </label>
         </div>
+        <div class="option-item">
+          <label class="label">
+            乐器
+            <select v-model="currentInstrument" @change="changeInstrument">
+              <option v-for="(ins, index) in instrumentList" :key="index" :value="ins">{{ ins }}</option>
+            </select>
+          </label>
+        </div>
+        <div class="option-item">
+          <label class="label">
+            音量
+            <input type="range" min="0" max="1" step="0.01" v-model.number="volume" @input="updateVolume" />
+          </label>
+        </div>
       </div>
     </div>
 
@@ -199,6 +213,9 @@ export default {
       showNoteName: false, // 显示音符名
       Notes: Notes,
       synth: null,
+      volume: 0.8,
+      currentInstrument: 'piano',
+      instrumentList: SmapleLibrary.list,
       keydownTimer: null,
       keyLock: false,
       lastKeyCode: '',
@@ -222,8 +239,9 @@ export default {
       this.setListener()
 
       this.synth = SmapleLibrary.load({
-        instruments: "piano"
+        instruments: this.currentInstrument
       }).toMaster()
+      this.updateVolume()
 
       // this.synth = new Tone.PolySynth( 10 ).toMaster()
     },
@@ -365,6 +383,24 @@ export default {
         } else if (keyType == 'black') {
           $(`[data-keyCode=${pressedNote.keyCode}]`).addClass('bkey-active');
         }
+      }
+    },
+    changeInstrument() {
+      if (this.synth && this.synth.dispose) {
+        this.synth.dispose()
+      }
+      this.synth = SmapleLibrary.load({
+        instruments: this.currentInstrument
+      }).toMaster()
+      this.updateVolume()
+    },
+    updateVolume() {
+      if (!this.synth || !this.synth.volume) return
+      let v = this.volume
+      if (v <= 0) {
+        this.synth.volume.value = -Infinity
+      } else {
+        this.synth.volume.value = 20 * Math.log10(v)
       }
     },
     // 触发单个音符播放
